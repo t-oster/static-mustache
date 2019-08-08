@@ -41,6 +41,7 @@ import com.github.sviperll.staticmustache.context.VariableContext;
 import com.github.sviperll.meta.TextFormat;
 import com.github.sviperll.text.Layoutable;
 import com.github.sviperll.text.RendererDefinition;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -209,6 +210,14 @@ public class GenerateRenderableAdapterProcessor extends AbstractProcessor {
             SwitchablePrintWriter switchablePrintWriter = SwitchablePrintWriter.createInstance(stringWriter);
             try {
                 FileObject templateBinaryResource = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", templatePath);
+                //On some environments (e.g. NetBeans with compile on save) this won't resolve the correct path
+                //thus we try another route
+                if (!new File(templateBinaryResource.toUri()).exists()) {
+                    File abs = new File(GenerateRenderableAdapterProcessor.class.getClassLoader().getResource(templatePath).getFile());
+                    if (abs.exists()) {
+                        templateBinaryResource = new FileAdapter(abs);
+                    }
+                }
                 TextFileObject templateResource = new TextFileObject(templateBinaryResource, templateCharset, templatePath);
                 JavaLanguageModel javaModel = JavaLanguageModel.createInstance(processingEnv.getTypeUtils(), processingEnv.getElementUtils());
                 RenderingCodeGenerator codeGenerator = RenderingCodeGenerator.createInstance(javaModel, templateFormatElement);
